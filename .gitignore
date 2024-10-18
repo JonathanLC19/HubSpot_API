@@ -17,3 +17,4 @@ nohup.out
 calendar_creds.json
 .DS_Store
 .vscode
+cache

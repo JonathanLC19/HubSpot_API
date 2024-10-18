@@ -1,0 +1,795 @@
+You can use the automation v4 API to fetch data from existing workflows, create new workflows, as well as delete workflows you no longer need.
+
+The sections below provide a walkthrough of how to use the v4 endpoints. For a full reference of the available endpoints and their required fields, click the Endpoints tab at the top of this article.
+
+Please note: This API is currently in beta and is subject to change based on testing and feedback. By using these endpoints you agree to adhere to HubSpot's Developer Terms& Developer Beta Terms. You also acknowledge and understand the risk associated with testing an unstable API.
+Fetch specific workflow by ID
+To fetch data from an existing workflow, make a GET request to /automation/v4/flows/{flowId}, where flowId is the ID an existing workflow in your account.
+
+For example, if you made a GET request to /automation/v4/flows/585051946 to get the workflow with an ID of 585051946, the resulting response would be:
+
+JSON
+// Example workflow response from GET request to /automations/v4/flows/585051946
+{
+  "id": "585051946",
+  "isEnabled": true,
+  "flowType": "WORKFLOW",
+  "revisionId": "7",
+  "name": "New form submission workflow",
+  "createdAt": "2024-06-07T17:27:08.101Z",
+  "updatedAt": "2024-06-07T17:31:11.263Z",
+  "startActionId": "1",
+  "nextAvailableActionId": "3",
+  "actions": [
+    {
+      "type": "SINGLE_CONNECTION",
+      "actionId": "1",
+      "actionTypeVersion": 0,
+      "actionTypeId": "0-13",
+      "connection": {
+        "edgeType": "STANDARD",
+        "nextActionId": "2"
+      },
+      "fields": {
+        "operation": "ADD",
+        "list_id": "178"
+      }
+    },
+    {
+      "type": "SINGLE_CONNECTION",
+      "actionId": "2",
+      "actionTypeVersion": 0,
+      "actionTypeId": "0-9",
+      "fields": {
+        "user_ids": [
+          "2620022"
+        ],
+        "delivery_method": "APP",
+        "subject": "New form submission",
+        "body": "Check out the new form submission we received!"
+      }
+    }
+  ],
+  "enrollmentCriteria": {
+    "shouldReEnroll": false,
+    "type": "EVENT_BASED",
+    "eventFilterBranches": [
+      {
+        "filterBranches": [],
+        "filters": [],
+        "eventTypeId": "4-1639801",
+        "operator": "HAS_COMPLETED",
+        "filterBranchType": "UNIFIED_EVENTS",
+        "filterBranchOperator": "AND"
+      }
+    ],
+    "listMembershipFilterBranches": []
+  },
+  "timeWindows": [],
+  "blockedDates": [],
+  "customProperties": {},
+  "crmObjectCreationStatus": "COMPLETE",
+  "type": "CONTACT_FLOW",
+  "objectTypeId": "0-1",
+  "suppressionListIds": [],
+  "canEnrollFromSalesforce": false
+}
+The response above includes the specification for a contact-based workflow with two actions, and contacts are enrolled if they filled out a form on your website.
+
+You can consult the sections below on how actions and enrollment criteria are specified.
+
+Action types
+Each workflow specification consists of a list of actions. Each action contains a set of required properties:
+
+actionId: a unique ID that identifies this action, provided as a string.
+actionTypeId: a predefined value that specifies the action type (e.g., "0-1" designates a DELAY action). A full list of actions and their associated actionTypeId is provided in the section below.
+actionTypeVersion: a number that designates the version of the action. For all built-in action types (e.g., a delay, email notification, etc.), the actionTypeVersion will be 0.
+connection: for non-branching actions, this property is an object that specifies the subsequent action, and contains two nested properties:
+edgeType: to proceed directly to the next action, this property should be set to "STANDARD". If you have a branch in your workflow, you can go to an action in a different branch by setting the edgeType to "GO-TO".
+nextActionId: the ID of the subsequent action in the workflow.
+type: for non-branching actions, this should be set to SINGLE_CONNECTION.
+fields: an object that specifies the data required by the action (e.g., how long to delay an enrolled object for a DELAY action). The structure of this property depends on the action type. Consult the sections and example actions below for the fields each action type expects.
+
+Action type IDs
+The table below details the available action types along with the associated actionTypeId:
+
+<table>
+  <tr>
+    <th>Action</th>
+    <th>Action type ID</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td>Delay until a specific date or date-based property</td>
+    <td>0-35</td>
+    <td>Delay until a preconfigured calendar date or date property of the enrolled record.</td>
+  </tr>
+  <tr>
+    <td>Delay a set amount of time, until a specific day of the week, or time of day.</td>
+    <td>0-1</td>
+    <td>Delay for a preconfigured amount of time (e.g., 3 hours, 5 days, etc.), until a specific day (e.g., Tuesday), or time of day (12:00 AM EST).</td>
+  </tr>
+  <tr>
+    <td>Add enrolled object to list or remove from list</td>
+    <td>0-13</td>
+    <td>Add or remove an enrolled contact to/from a static list.</td>
+  </tr>
+  <tr>
+    <td>Send automated email to a contact associated with the enrolled record</td>
+    <td>0-4</td>
+    <td>Send an automated marketing email to the enrolled record.</td>
+  </tr>
+  <tr>
+    <td>Send email notification to a user or team</td>
+    <td>0-8</td>
+    <td>Send an internal email notification to a user or team in your account.</td>
+  </tr>
+  <tr>
+    <td>Send an in-app notification to a user or team</td>
+    <td>0-9</td>
+    <td>Trigger an in-app notification to a user or team in your account.</td>
+  </tr>
+  <tr>
+    <td>Set property</td>
+    <td>0-5</td>
+    <td>Set a property on an enrolled object.</td>
+  </tr>
+  <tr>
+    <td>Create task</td>
+    <td>0-3</td>
+    <td>Create a new task.</td>
+  </tr>
+  <tr>
+    <td>Create a new record</td>
+    <td>0-14</td>
+    <td>Create a new record (contact, company, deal, ticket, or lead).</td>
+  </tr>
+</table>
+
+Action fields
+The fields property of your action depends on the corresponding action type.
+
+The actions available depend on your account subscription. Learn about all available actions in this knowledge base article.
+To confirm the fields required for a specific action, you can create the workflow with that action using the workflows tool, then make a GET request to /automations/v4/flows/{flowId} for that workflow. You can find the flowId of the workflow by editing the workflow then checking the URL for the second ID in the URL path, or you can make a GET request to /automations/v4/flows to get all workflows and filter the resulting response by the name of your workflow.
+workflow-id-for-automation-v4-api-1
+
+The sections below outline the required fields for common actions in a workflow.
+
+Delay until a specific date or date-based property
+The code below specifies an example delay action until a specific date. Based on whether you're delaying until a preconfigured date or a date-based property of the enrolled record, you'll need to specify the sub-properties of the date field accordingly:
+
+If you're delaying until a specific calendar date, provide STATIC_VALUE for the type sub-property, then provide the calendar date for the staticValue sub-property as a unix timestamp.
+To delay until a date-based property of the enrolled record, provide OBJECT_PROPERTY for the type sub-property, then specify the property to use as the propertyName.
+JSON
+// Example of a delay action to delay until a specific date or date-based property
+ {
+  "type": "SINGLE_CONNECTION",
+  "actionId": "5",
+  "actionTypeVersion": 0,
+  "actionTypeId": "0-35",
+  "connection": {
+    "edgeType": "STANDARD",
+    "nextActionId": "7"
+  },
+  "fields": {
+    "date": {
+      "type": "STATIC_VALUE",
+      "staticValue": "1719446400000"
+    },
+    "delta": "0",
+    "time_unit": "DAYS",
+    "time_of_day": {
+      "hour": 12,
+      "minute": 0
+    }
+  }
+}
+Delay a set amount of time
+The code below specifies an example delay action for a preconfigured amount of time.
+
+JSON
+// Example of a delay action to delay for a specific amount of time (e.g., 6 hours)
+ {
+  "type": "SINGLE_CONNECTION",
+  "actionId": "5",
+  "actionTypeVersion": 0,
+  "actionTypeId": "0-35",
+  "connection": {
+    "edgeType": "STANDARD",
+    "nextActionId": "7"
+  },
+  "fields": {
+    "delta": "720",
+    "time_unit": "MINUTES"
+  }
+}
+Send an automated marketing email to an enrolled contact
+The following example action demonstrates how to send an automated marketing email with an ID of 113782603056 to an enrolled contact.
+
+JSON
+// Example action to send an automated marketing email to an enrolled contact
+{
+  "type": "SINGLE_CONNECTION",
+  "actionId": "4",
+  "actionTypeVersion": 0,
+  "actionTypeId": "0-4",
+  "fields": {
+    "content_id": "113782603056"
+  }
+}
+Set property
+The action definition below provides an example of setting the hs_lead_status property to "IN_PROGRESS".
+
+JSON
+// Example action to set the hs_lead_status property to IN_PROGRESS
+{
+  "actionId": "2",
+  "actionTypeVersion": 0,
+  "actionTypeId": "0-5",
+  "connection": {
+    "edgeType": "STANDARD",
+    "nextActionId": "4"
+  },
+  "fields": {
+    "property_name": "hs_lead_status",
+    "association": {
+      "associationCategory": "HUBSPOT_DEFINED",
+      "associationTypeId": 1
+    },
+    "value": {
+      "staticValue": "IN_PROGRESS",
+      "type": "STATIC_VALUE"
+    }
+  }
+}
+Create task
+The action definition below is an example of creating an unassigned task:
+
+JSON
+// Example action definition for creating a new unassigned task
+{
+  "type": "SINGLE_CONNECTION",
+  "actionId": "1",
+  "actionTypeVersion": 0,
+  "actionTypeId": "0-3",
+  "fields": {
+    "task_type": "TODO",
+    "subject": "Check in with lead",
+    "body": "<p>Remember to sync up with new lead!</p>",
+    "associations": [
+        {
+        "target": {
+            "associationCategory": "HUBSPOT_DEFINED",
+            "associationTypeId": 10
+        },
+        "value": {
+            "type": "ENROLLED_OBJECT"
+        }
+        }
+    ],
+    "use_explicit_associations": "true",
+    "priority": "NONE"
+  }
+}
+Create a new record
+The example action below creates a new deal and associates it with the contact enrolled in the workflow:
+
+JSON
+// Example action definition for creating a new deal and associating it with the enrolled contact
+{
+  "type": "SINGLE_CONNECTION",
+  "actionId": "2",
+  "actionTypeVersion": 0,
+  "actionTypeId": "0-14",
+  "connection": {
+    "edgeType": "STANDARD",
+    "nextActionId": "3"
+  },
+  "fields": {
+    "object_type_id": "0-3",
+    "properties": [
+      {
+        "targetProperty": "dealstage",
+        "value": {
+          "type": "STATIC_VALUE",
+          "staticValue": "appointmentscheduled"
+        }
+      },
+      {
+        "targetProperty": "dealname",
+        "value": {
+          "type": "STATIC_VALUE",
+          "staticValue": "New deal"
+        }
+      },
+      {
+        "targetProperty": "amount",
+        "value": {
+          "type": "STATIC_VALUE",
+          "staticValue": "1000"
+        }
+      }
+    ],
+    "associations": [
+        {
+        "target": {
+            "associationCategory": "HUBSPOT_DEFINED",
+            "associationTypeId": 3
+        },
+        "value": {
+            "type": "ENROLLED_OBJECT"
+        }
+        }
+    ],
+    "use_explicit_associations": "true"
+  }
+}
+Add an enrolled object to a static list
+The following action definition is an example of adding an enrolled contact to a static list, specified as the list_id. To remove an enrolled object from a list, switch the operation property to "REMOVE".
+
+JSON
+// Example action to add an enrolled contact to a list
+{
+  "type": "SINGLE_CONNECTION",
+  "actionId": "4",
+  "actionTypeVersion": 0,
+  "actionTypeId": "0-13",
+  "fields": {
+    "operation": "ADD",
+    "list_id": "178"
+  }
+}
+Branching actions
+Branching actions differ from other actions in that they don't follow the standard action structure. Branching action definitions don't have fields or connection properties. There are two types of branching actions: list branch actions and static branch actions. Both types must also define a default branch using the defaultBranchName and defaultBranch properties.
+
+List branch actions
+List branch actions include a listBranches property that specifies a set of filter branches to segment enrolled objects. Each filterBranch is configured using the syntax and formatting outlined in the list filters documentation.
+
+JSON
+// Example list branch action
+{
+  "actionId": "6",
+  "listBranches": [
+    {
+      "filterBranch": {},
+      "connection": {
+        "edgeType": "STANDARD",
+        "nextActionId": "7"
+      }
+    },
+    {
+      "filterBranch": {},
+      "branchName": "Some branch name",
+      "connection": {
+        "edgeType": "GOTO",
+        "nextActionId": "4"
+      }
+    }
+  ],
+  "defaultBranchName": "Fall-through branch",
+  "defaultBranch": {
+    "edgeType": "STANDARD",
+    "nextActionId": "8"
+  }
+}
+Static branch actions
+Static branch actions include an inputValue definition, which supports different shapes for the input values of the branch. It also includes a list of staticBranches, which defines which actions come next in the branch.
+
+JSON
+// Example static branch action
+{
+  "actionId": "1",
+  "inputValue": {
+    "propertyName": "example_property"
+  },
+  "staticBranches": [
+    {
+      "branchValue": "example_value_1",
+      "connection": {
+        "edgeType": "STANDARD",
+        "nextActionId": "2"
+      }
+    },
+    {
+      "branchValue": "example_value_1",
+      "connection": {
+        "edgeType": "STANDARD",
+        "nextActionId": "3"
+      }
+    },
+    // ...
+  ],
+  "defaultBranchName": "Fall-through branch",
+  "defaultBranch": {
+    "edgeType": "STANDARD",
+    "nextActionId": "4"
+  }
+}
+Enrollment criteria
+You can configure the conditions for objects to be enrolled in your workflow within the enrollmentCriteria property of your workflow specification.
+
+The data you specify varies based on whether your enrollment is event-based or list-based. You can specify the enrollment type by setting the type of enrollmentCriteria to either EVENT_BASED or LIST_BASED.
+You can specify the re-enrollment settings for objects enrolled in your workflow by setting the shouldReEnroll field to true or false.
+Learn more about workflow enrollment in this knowledge base article.
+
+Event-based enrollment
+Event-based workflows will enroll objects when specific events occur, such as when a form is submitted.
+
+You can configure the criteria for which events will trigger enrollment by defining a list of eventFilterBranches. Each eventFilterBranch definition specifies a qualifying event (e.g., a form submission) using an eventTypeId that corresponds to that event.
+Most events will have the same values for the following fields:
+operator: "HAS_COMPLETED"
+filterBranchType: "UNIFIED_EVENTS"
+filterBranchOperator: "AND"
+The table below defines each eventTypeId that corresponds to the event you can configure for your workflow:
+
+<table>
+  <tr>
+    <th>Event</th>
+    <th>Event type ID</th>
+  </tr>
+  <tr>
+    <td>Ad interaction</td>
+    <td>4-1553675</td>
+  </tr>
+  <tr>
+    <td>Email open</td>
+    <td>4-666440</td>
+  </tr>
+  <tr>
+    <td>Email reply</td>
+    <td>4-665538</td>
+  </tr>
+  <tr>
+    <td>Email click</td>
+    <td>4-666288</td>
+  </tr>
+  <tr>
+    <td>Email delivery</td>
+    <td>4-665536</td>
+  </tr>
+  <tr>
+    <td>Form submission</td>
+    <td>4-1639801</td>
+  </tr>
+  <tr>
+    <td>Form view</td>
+    <td>4-1639797</td>
+  </tr>
+  <tr>
+    <td>Form interaction</td>
+    <td>4-1639799</td>
+  </tr>
+  <tr>
+    <td>Marketing event registration</td>
+    <td>4-68559</td>
+  </tr>
+  <tr>
+    <td>Marketing event cancellation</td>
+    <td>4-69072</td>
+  </tr>
+  <tr>
+    <td>Call start</td>
+    <td>4-1733817</td>
+  </tr>
+  <tr>
+    <td>Call end</td>
+    <td>4-1741072</td>
+  </tr>
+  <tr>
+    <td>SMS shortlink click</td>
+    <td>4-1722276</td>
+  </tr>
+  <tr>
+    <td>CTA view</td>
+    <td>4-1555804</td>
+  </tr>
+  <tr>
+    <td>CTA click</td>
+    <td>4-1555805</td>
+  </tr>
+  <tr>
+    <td>Media play on webpage</td>
+    <td>4-675783</td>
+  </tr>
+  <tr>
+    <td>Property value changed</td>
+    <td>4-655002</td>
+  </tr>
+  <tr>
+    <td>Object created</td>
+    <td>4-1463224</td>
+  </tr>
+</table>
+The example code below defines the enrollmentCriteria to enroll contacts who successfully submitted a form:
+
+JSON
+// Example of an enrollmentCriteria definition to enroll contacts who submitted a form
+"enrollmentCriteria": {
+  "shouldReEnroll": true,
+  "type": "EVENT_BASED",
+  "eventFilterBranches": [
+    {
+      "filterBranches": [],
+      "filters": [],
+      "eventTypeId": "4-1639801",
+      "operator": "HAS_COMPLETED",
+      "filterBranchType": "UNIFIED_EVENTS",
+      "filterBranchOperator": "AND"
+    }
+  ],
+  "listMembershipFilterBranches": []
+}
+
+JSON
+// Example of an enrollmentCriteria when an object is created
+ 'enrollmentCriteria': {'eventFilterBranches': [{'eventTypeId': '4-1463224',
+                                                 'filterBranchOperator': 'AND',
+                                                 'filterBranchType': 'UNIFIED_EVENTS',
+                                                 'filterBranches': [],
+                                                 'filters': [],
+                                                 'operator': 'HAS_COMPLETED'}],
+                        'listMembershipFilterBranches': [],
+                        'shouldReEnroll': False,
+                        'type': 'EVENT_BASED'}
+
+JSON
+// Example of an enrollmentCriteria when an object is created and a refiment criteria is added (i.e. when a contact is created and calls_count property is less than 4)
+'enrollmentCriteria': {'eventFilterBranches': [{'eventTypeId': '4-1463224',
+                                                 'filterBranchOperator': 'AND',
+                                                 'filterBranchType': 'UNIFIED_EVENTS',
+                                                 'filterBranches': [],
+                                                 'filters': [],
+                                                 'operator': 'HAS_COMPLETED'}],
+                        'listMembershipFilterBranches': [],
+                        'refinementCriteria': {'filterBranchOperator': 'OR',
+                                               'filterBranchType': 'OR',
+                                               'filterBranches': [{'filterBranchOperator': 'AND',
+                                                                   'filterBranchType': 'AND',
+                                                                   'filterBranches': [],
+                                                                   'filters': [{'filterType': 'PROPERTY',
+                                                                                'operation': {'includeObjectsWithNoValueSet': False,
+                                                                                              'operationType': 'NUMBER',
+                                                                                              'operator': 'IS_LESS_THAN',
+                                                                                              'value': 4.0},
+                                                                                'property': 'calls_count'}]}],
+                                               'filters': []},
+                        'shouldReEnroll': False,
+                        'type': 'EVENT_BASED'}
+
+JSON
+// Examples of an enrollmentCriteria when a property value changes to any value
+'enrollmentCriteria': {'eventFilterBranches': [{'eventTypeId': '4-655002',
+                                                 'filterBranchOperator': 'AND',
+                                                 'filterBranchType': 'UNIFIED_EVENTS',
+                                                 'filterBranches': [],
+                                                 'filters': [{'filterType': 'PROPERTY',
+                                                              'operation': {'includeObjectsWithNoValueSet': False,
+                                                                            'operationType': 'STRING',
+                                                                            'operator': 'IS_EQUAL_TO',
+                                                                            'value': 'current_issues'},
+                                                              'property': 'hs_name'},
+                                                             {'filterType': 'PROPERTY',
+                                                              'operation': {'includeObjectsWithNoValueSet': False,
+                                                                            'operationType': 'ALL_PROPERTY',
+                                                                            'operator': 'IS_KNOWN'},
+                                                              'property': 'hs_value'}],
+                                                 'operator': 'HAS_COMPLETED'}],
+                        'listMembershipFilterBranches': [],
+                        'shouldReEnroll': False,
+                        'type': 'EVENT_BASED'}
+
+JSON
+// Examples of an enrollmentCriteria when a property value changes to a specific value
+'enrollmentCriteria': {'eventFilterBranches': [{'eventTypeId': '4-655002',
+                                                 'filterBranchOperator': 'AND',
+                                                 'filterBranchType': 'UNIFIED_EVENTS',
+                                                 'filterBranches': [],
+                                                 'filters': [{'filterType': 'PROPERTY',
+                                                              'operation': {'includeObjectsWithNoValueSet': False,
+                                                                            'operationType': 'STRING',
+                                                                            'operator': 'IS_EQUAL_TO',
+                                                                            'value': 'current_issues'},
+                                                              'property': 'hs_name'},
+                                                             {'filterType': 'PROPERTY',
+                                                              'operation': {'includeObjectsWithNoValueSet': False,
+                                                                            'operationType': 'ENUMERATION',
+                                                                            'operator': 'IS_ANY_OF',
+                                                                            'values': ['Billing']},
+                                                              'property': 'hs_value'}],
+                                                 'operator': 'HAS_COMPLETED'}],
+                        'listMembershipFilterBranches': [],
+                        'shouldReEnroll': False,
+                        'type': 'EVENT_BASED'}
+
+Filter-based enrollment
+Workflows with filter-based enrollment will enroll objects when the criteria you configure is met.
+
+Criteria is configured setting the listFilterBranch field of your enrollmentCriteria based which objects should qualify for enrollment in your workflow. Within a listFilterBranch, you can define the specific filter criteria using a list of filterBranches.
+You can learn more about the syntax and formatting for defining a listFilterBranch in the list filters documentation.
+For example, the enrollmentCriteria below defines the criteria for when a contact's City property is equal to Dublin:
+
+JSON
+// Example of an enrollmentCriteria definition to filter contacts based on whether their city property is equal to 'Dublin'
+"enrollmentCriteria": {
+  "shouldReEnroll": false,
+  "type": "LIST_BASED",
+  "listFilterBranch": {
+    "filterBranches": [
+      {
+        "filterBranches": [],
+        "filters": [
+          {
+            "property": "city",
+            "operation": {
+              "operator": "IS_EQUAL_TO",
+              "includeObjectsWithNoValueSet": false,
+              "values": [
+                "Dublin"
+              ],
+              "operationType": "MULTISTRING"
+            },
+            "filterType": "PROPERTY"
+          }
+        ],
+        "filterBranchType": "AND",
+        "filterBranchOperator": "AND"
+      }
+    ],
+    "filters": [],
+    "filterBranchType": "OR",
+    "filterBranchOperator": "OR"
+  },
+  "unEnrollObjectsNotMeetingCriteria": false,
+  "reEnrollmentTriggersFilterBranches": []
+}
+Create a workflow
+To create a workflow, make a POST request to /automations/v4/flows and provide a workflow specification in the body of your request.
+
+Consult the Action types and Enrollment criteria sections above for a full reference on specifying the actions in your workflow and configuring the enrollmentCriteria.
+For contact-based workflows, set the type to "CONTACT_FLOW". For all other workflow types (e.g., deal-based, goal-based, etc.), set the type to "PLATFORM_FLOW". 
+For example, if you wanted to create a workflow that executed the following:
+
+Once a contact submits a specific form on your website, a ticket will be created in your account.
+After a 1 day delay, the enrolled contact will be sent an automated marketing email.
+The request body of your POST request would resemble the following:
+
+JSON
+// Example request body for POST request to create a workflow
+{
+  "isEnabled": true,
+  "flowType": "WORKFLOW",
+  "name": "New form submission from interested contact",
+  "startActionId": "1",
+  "nextAvailableActionId": "4",
+  "actions": [
+    {
+      "type": "SINGLE_CONNECTION",
+      "actionId": "1",
+      "actionTypeVersion": 0,
+      "actionTypeId": "0-14",
+      "connection": {
+        "edgeType": "STANDARD",
+        "nextActionId": "3"
+      },
+      "fields": {
+        "object_type_id": "0-5",
+        "properties": [
+          {
+            "targetProperty": "subject",
+            "value": {
+              "type": "STATIC_VALUE",
+              "staticValue": "Review new form submission"
+            }
+          },
+          {
+            "targetProperty": "hs_pipeline_stage",
+            "value": {
+              "type": "STATIC_VALUE",
+              "staticValue": "1"
+            }
+          },
+          {
+            "targetProperty": "source_type",
+            "value": {
+              "type": "STATIC_VALUE",
+              "staticValue": "FORM"
+            }
+          },
+          {
+            "targetProperty": "content",
+            "value": {
+              "type": "STATIC_VALUE",
+              "staticValue": "[Triage required] new form submitted. Next available rep should review."
+            }
+          }
+        ],
+        "associations": [
+          {
+            "target": {
+              "associationCategory": "HUBSPOT_DEFINED",
+              "associationTypeId": 16
+            },
+            "value": {
+              "type": "ENROLLED_OBJECT"
+            }
+          },
+          {
+            "target": {
+              "associationCategory": "HUBSPOT_DEFINED",
+              "associationTypeId": 339
+            },
+            "value": {
+              "type": "COPY_ASSOCIATION",
+              "sourceSpec": {
+                "associationCategory": "HUBSPOT_DEFINED",
+                "associationTypeId": 279
+              }
+            }
+          }
+        ],
+        "use_explicit_associations": "true"
+      }
+    },
+    {
+      "type": "SINGLE_CONNECTION",
+      "actionId": "2",
+      "actionTypeVersion": 0,
+      "actionTypeId": "0-4",
+      "fields": {
+        "content_id": "113782603056"
+      }
+    },
+    {
+      "type": "SINGLE_CONNECTION",
+      "actionId": "3",
+      "actionTypeVersion": 0,
+      "actionTypeId": "0-1",
+      "connection": {
+        "edgeType": "STANDARD",
+        "nextActionId": "2"
+      },
+      "fields": {
+        "delta": "1440",
+        "time_unit": "MINUTES"
+      }
+    }
+  ],
+  "enrollmentCriteria": {
+    "shouldReEnroll": false,
+    "type": "EVENT_BASED",
+    "eventFilterBranches": [
+      {
+        "filterBranches": [],
+        "filters": [
+          {
+            "property": "hs_form_id",
+            "operation": {
+              "operator": "IS_ANY_OF",
+              "includeObjectsWithNoValueSet": false,
+              "values": [
+                "2f5cc7f8-d359-4e9c-a770-dd42ea07d217"
+              ],
+              "operationType": "ENUMERATION"
+            },
+            "filterType": "PROPERTY"
+          }
+        ],
+        "eventTypeId": "4-1639801",
+        "operator": "HAS_COMPLETED",
+        "filterBranchType": "UNIFIED_EVENTS",
+        "filterBranchOperator": "AND"
+      }
+    ],
+    "listMembershipFilterBranches": []
+  },
+  "timeWindows": [],
+  "blockedDates": [],
+  "customProperties": {},
+  "crmObjectCreationStatus": "COMPLETE",
+  "type": "CONTACT_FLOW",
+  "objectTypeId": "0-1",
+  "suppressionListIds": [],
+  "canEnrollFromSalesforce": false
+}
+Delete a workflow
+To delete a workflow, make a DELETE request to /automations/v4/{flowId} using the ID of the workflow you want to delete as the flowId.

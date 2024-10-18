@@ -1,0 +1,437 @@
+<!doctype html>
+<html ng-app="immobox" ng-controller="appCtrl">
+  <head>
+    <!-- Google Tag Manager -->
+    <script>
+      (function (w, d, s, l, i) {
+        w[l] = w[l] || [];
+        w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
+        var f = d.getElementsByTagName(s)[0],
+          j = d.createElement(s),
+          dl = l != "dataLayer" ? "&l=" + l : "";
+        j.async = true;
+        j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
+        f.parentNode.insertBefore(j, f);
+      })(window, document, "script", "dataLayer", "GTM-ML7XVJX");
+    </script>
+    <!-- End Google Tag Manager -->
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <title>Immobox - Espace Pro</title>
+    <meta
+      name="description"
+      content="Votre espace Immobox pour gÃ©rer et accÃ©der Ã  vos annonces immobiliÃ¨res."
+    />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
+    />
+    <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
+    <link
+      href="https://fonts.googleapis.com/css?family=Lato:300,400,700,300italic,400italic"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+
+    <style>
+      @media only screen and (min-width: 500px) and (max-width: 1400px) {
+        .text-muted {
+          font-size: 12px;
+        }
+        .input-group-lg {
+          max-width: 250px !important;
+        }
+      }
+    </style>
+
+    <link rel="stylesheet" href="styles/immobox.css" />
+
+    <link rel="stylesheet" href="styles/dev.css" />
+    <style>
+      @media only screen and (min-width: 1280px) and (max-width: 1400px) {
+        .text-muted {
+          font-size: 12px;
+        }
+        .input-group-lg {
+          max-width: 350px !important;
+        }
+      }
+    </style>
+    <!--<script src="https://apis.google.com/js/platform.js"></script>
+    <script src="https://apis.google.com/js/client.js"></script>
+
+    <script src="http://feather.aviary.com/js/feather.js"></script>-->
+    <script>
+      // need to be loaded before angular-file-upload-shim(.min).js
+      FileAPI = {
+        jsPath: "vendors/ng-file-upload/",
+        staticPath: "vendors/ng-file-upload/",
+      };
+      var featherEditor = null;
+    </script>
+    <script src="js/vendors.0d5b68c0.js"></script>
+
+    <script src="js/google.3119b0d9.js"></script>
+
+    <script src="js/app.2dc22e96.js"></script>
+
+    <script src="next.build.js"></script>
+  </head>
+  <body
+    ng-cloak
+    ng-class="{'body-special':!user.advertiserSelected}"
+    ng-keyup="keyup($event)"
+    id="immobox"
+  >
+    <!-- Google Tag Manager (noscript) -->
+    <noscript
+      ><iframe
+        src="https://www.googletagmanager.com/ns.html?id=GTM-ML7XVJX"
+        height="0"
+        width="0"
+        style="display: none; visibility: hidden"
+      ></iframe
+    ></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+    <toaster-container></toaster-container>
+    <div
+      ng-if="user.loaded && user.advertiserSelected && user.advertiser.id"
+      ng-click="resetSelectedIds()"
+    >
+      <header class="top-header clearfix" id="header">
+        <div class="logo bg-info">
+          <a href="#/">
+            <img
+              ng-src="{{ logo }}"
+              ng-if="user.advertiser.fullweb && logo && logo !== 'no logo'"
+              title="Accueil"
+            />
+            <img
+              src="/images/logo_fullweb.png"
+              class="col-lg-12"
+              ng-if="user.advertiser.fullweb && (!logo || logo === 'no logo')"
+              title="Accueil"
+            />
+            <img
+              src="images/logo_immobox.png"
+              class="col-lg-12"
+              ng-if="!user.advertiser.fullweb"
+              title="Accueil"
+            />
+          </a>
+        </div>
+        <!-- mobile mode -->
+        <div class="menu-button" toggle-off-canvas>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </div>
+        <div class="top-nav">
+          <ul class="nav-left list-unstyled" ng-if="user.advertiser.fullweb">
+            <li
+              class="dropdown"
+              dropdown
+              is-open="isopenEmail"
+              ng-controller="unreadEmailsCtrl"
+              ng-show="user.google"
+            >
+              <a
+                href=""
+                class="dropdown-toggle"
+                dropdown-toggle
+                ng-disabled="disabled"
+              >
+                <i class="material-icons">email</i>
+                <span class="badge badge-blue" ng-bind="nbThreads"></span>
+              </a>
+              <div class="dropdown-menu panel panel-default">
+                <div class="panel-heading">
+                  <span
+                    translate
+                    translate-values="{ n: nbThreads }"
+                    ng-if="nbThreads <= 1"
+                    >Unread-n</span
+                  >
+                  <span
+                    translate
+                    translate-values="{ n: nbThreads }"
+                    ng-if="nbThreads > 1"
+                    >Unreads-n</span
+                  >
+                </div>
+                <ul class="list-group">
+                  <li class="list-group-item" ng-repeat="thread in threads">
+                    <a ng-href="#/email/{{ thread.id }}" class="media">
+                      <span class="media-left media-icon">
+                        <span
+                          class="round-icon"
+                          ng-class="{'sm bg-success' : $index%3==0, 'sm bg-warning' : $index%3==1, 'sm bg-blue' : $index%3==2}"
+                          ><i class="fa fa-envelope-o"></i
+                        ></span>
+                      </span>
+                      <div class="media-body">
+                        <span class="block"
+                          >{{ thread.fromName }}
+                          <span translate
+                            >vous a envoyÃ© un message</span
+                          ></span
+                        >
+                        <span class="text-muted block"
+                          >{{ thread.fromNow }}</span
+                        >
+                      </div>
+                    </a>
+                  </li>
+                  <li
+                    ng-if="moreThreads"
+                    style="
+                      text-align: center;
+                      padding-bottom: 0.5em;
+                      font-weight: bold;
+                      font-size: 1.5em;
+                    "
+                  >
+                    ...
+                  </li>
+                </ul>
+                <div class="panel-footer">
+                  <a ng-href="#/emails" translate>Voir tous les Emails</a>
+                </div>
+              </div>
+            </li>
+
+            <day-reminders></day-reminders>
+
+            <li
+              class="dropdown"
+              dropdown
+              ng-controller="ChatPresenceController"
+            >
+              <a href="" class="dropdown-toggle" dropdown-toggle>
+                <i class="material-icons">group</i>
+                <span class="badge" ng-bind="countConnectedUsers()"></span>
+              </a>
+              <div class="dropdown-menu panel panel-default">
+                <div class="panel-heading" translate>
+                  Utilisateurs connectÃ©s
+                </div>
+                <ul class="panel-body list-unstyled">
+                  <li
+                    ng-repeat="collaborator in collaborators | orderBy:'online':true"
+                  >
+                    <a href="" ng-click="openChat(collaborator)">
+                      <strong
+                        ng-class="{'text-success': collaborator.online, 'text-muted': !collaborator.online}"
+                      >
+                        {{ collaborator.name }}
+                      </strong>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </li>
+
+            <li class="dropdown" dropdown ng-if="user.google">
+              <a
+                href=""
+                class="dropdown-toggle"
+                dropdown-toggle
+                ng-disabled="disabled"
+              >
+                <img
+                  class="icon-google"
+                  src="images/assets/google.svg"
+                  alt="google connect"
+                />
+              </a>
+              <div class="dropdown-menu panel panel-default">
+                <div class="panel-body" ng-if="user.google">
+                  <p translate>Vous Ãªtes connectÃ© au compte google</p>
+                  <strong>{{ user.google.emailAddress }}</strong>
+                </div>
+                <div class="panel-footer">
+                  <a href="" ng-click="google.disconnect()" translate
+                    >DÃ©connexion</a
+                  >
+                </div>
+              </div>
+            </li>
+            <li class="dropdown" dropdown ng-if="!user.google">
+              <a
+                href=""
+                class="dropdown-toggle"
+                dropdown-toggle
+                ng-disabled="disabled"
+              >
+                <img
+                  class="icon-google"
+                  src="images/assets/google-off.svg"
+                  alt="google connect"
+                />
+              </a>
+              <div class="dropdown-menu panel panel-default">
+                <div class="panel-body">
+                  <span translate>Vous n'Ãªtes pas connectÃ© Ã  google</span>
+                </div>
+                <div class="panel-footer">
+                  <a href="" ng-click="google.connect()" translate>Connexion</a>
+                </div>
+              </div>
+            </li>
+
+            <li>
+              <form
+                class="form-inline"
+                name="search360.form"
+                ng-submit="search360.search()"
+              >
+                <div
+                  class="input-group input-group-lg"
+                  style="max-width: 300px; min-width: 200px"
+                >
+                  <input
+                    type="text"
+                    ng-model="search360.query"
+                    required
+                    class="form-control"
+                    placeholder="{{ 'Rechercher' | translate }}"
+                  />
+                  <span class="input-group-btn">
+                    <button class="btn btn-default" type="submit">
+                      <i class="material-icons">search</i>
+                    </button>
+                  </span>
+                </div>
+              </form>
+            </li>
+          </ul>
+
+          <ul class="nav-right pull-right list-unstyled container-user-name">
+            <li class="text-muted user-name">
+              <span ng-bind="user.fullname"></span>
+            </li>
+            <li class="dropdown text-normal nav-profile" dropdown>
+              <a class="avatar dropdown-toggle" href="" dropdown-toggle>
+                <img
+                  class="img-circle img30_30"
+                  ng-src="{{user.profile.photo.src.s}}"
+                  alt=""
+                  ng-show="user.profile.photo.src"
+                />
+                <img
+                  class="img-circle img30_30"
+                  src="/images/no-picture.gif"
+                  alt=""
+                  ng-hide="user.profile.photo.src"
+                />
+                <span class="user-profile">
+                  <span ng-bind="user.profile.first_name"></span>
+                  <span ng-bind="user.profile.last_name"></span>
+                </span>
+              </a>
+              <ul class="dropdown-menu pull-right">
+                <li
+                  class="dropdown theme text-normal"
+                  dropdown
+                  ng-show="user.advertiser.fullweb"
+                >
+                  <a
+                    href=""
+                    ng-click="changeTheme('light')"
+                    ng-show="user.theme==='dark'"
+                    ><i class="material-icons">color_lens</i
+                    ><span translate>ThÃ¨me light</span></a
+                  >
+                  <a
+                    href=""
+                    ng-click="changeTheme('dark')"
+                    ng-show="user.theme==='light'"
+                    ><i class="material-icons">color_lens</i
+                    ><span translate>ThÃ¨me dark</span></a
+                  >
+                </li>
+                <li>
+                  <a
+                    href="#/homeedit"
+                    ng-show="user.advertiser.fullweb && !user.profile.is_internal"
+                  >
+                    <i class="material-icons">dashboard</i>
+                    <span translate>Organiser la page d'accueil</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href=""
+                    ng-click="changeLanguage('fr')"
+                    ng-show="user.lang==='en'"
+                    ><i class="material-icons">language</i>FranÃ§ais</a
+                  >
+                  <a
+                    href=""
+                    ng-click="changeLanguage('en')"
+                    ng-show="user.lang==='fr'"
+                    ><i class="material-icons">language</i>English</a
+                  >
+                </li>
+                <li>
+                  <a
+                    href="#/session_profile"
+                    ng-hide="user.profile.is_internal"
+                  >
+                    <i class="material-icons">mode_edit</i>
+                    <span translate>Editer mon profil</span>
+                  </a>
+                </li>
+                <li ng-show="user.multiAdvertiser">
+                  <a href="#/changeadvertiser">
+                    <i class="material-icons">store_mall_directory</i>
+                    <span translate>Changer d'agence</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="#/logout">
+                    <i class="material-icons">power_settings_new</i>
+                    <span translate>DÃ©connexion</span>
+                  </a>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </div>
+      </header>
+      <aside id="nav-container" class="navbarMainCollapse">
+        <ng-include
+          src="'views/fullwebMenu.html'"
+          ng-if="user.advertiser.fullweb"
+        ></ng-include>
+        <ng-include
+          src="'views/immoboxMenu.html'"
+          ng-if="!user.advertiser.fullweb"
+        ></ng-include>
+      </aside>
+    </div>
+    <div class="view-container">
+      <section ng-view id="content" ui-scrollpoint-target></section>
+    </div>
+
+    <imbx-chats></imbx-chats>
+
+    <script>
+      var $buoop = { vs: { i: 9, f: 29 } };
+      function $buo_f() {
+        var e = document.createElement("script");
+        e.src = "https://browser-update.org/update.js";
+        document.body.appendChild(e);
+      }
+      try {
+        document.addEventListener("DOMContentLoaded", $buo_f, false);
+      } catch (e) {
+        window.attachEvent("onload", $buo_f);
+      }
+    </script>
+  </body>
+</html>

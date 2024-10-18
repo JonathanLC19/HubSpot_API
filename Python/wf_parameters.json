@@ -1,0 +1,55 @@
+{
+    "hs_wf_structure": [
+    {
+        "actions": [
+        {
+        "actionTypeId": "0-35",
+        "action": "Delay until a specific date or date-based property"
+        },
+        {
+        "actionTypeId": "0-1",
+        "action": "Delay a set amount of time, until a specific day of the week, or time of day"
+        },
+        {
+        "actionTypeId": "0-13",
+        "action": "Add enrolled object to list or remove from list"
+        },
+        {
+        "actionTypeId": "0-4",
+        "action": "Send automated email to a contact associated with the enrolled record"
+        },
+        {
+        "actionTypeId": "0-8",
+        "action": "Send email notification to a user or team"
+        },
+        {
+        "actionTypeId": "0-9",
+        "action": "Send an in-app notification to a user or team"
+        },
+        {
+        "actionTypeId": "0-5",
+        "action": "Set property"
+        },
+        {
+        "actionTypeId": "0-3",
+        "action": "Create task"
+        },
+        {
+        "actionTypeId": "0-14",
+        "action": "Create a new record (contact, company, deal, ticket, lead, apartment, booking, reservation, group, platform, block, appointment)"
+        }
+        ],
+    
+        "connection": [
+            {
+            "edgeType": "STANDARD",
+            "description": "Default edge type used to connect actions in a linear sequence."
+            },
+            {
+            "edgeType": "GO-TO",
+            "description": "This edge type is used when you have branches in your workflow and need to jump to an action in a different branch."
+            }
+        ]
+    }
+    ]
+}
